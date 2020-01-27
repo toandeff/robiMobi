@@ -45,16 +45,29 @@ for dataIdx in range (len(data)):
         y_paths.append(directory_path + data[dataIdx])
 x_paths = np.array(x_paths)
 y_paths = np.array(y_paths)
+x_pathsTrainData = x_paths[0:700]
+x_pathsValData = x_paths[700:]
+print(len(x_pathsTrainData), " " ,len(x_pathsValData))
+x_imgTrainData = np.zeros(shape=(len(x_pathsTrainData),512,512,3))
+x_imgValData = np.zeros(shape=(len(x_pathsValData),512,512,3))
 
-x_img = np.zeros(shape=(len(x_paths),512,512,3))
-for idx in range(0, len(x_paths)):
+
+for idx in range(0, len(x_pathsTrainData)):
   #print("idx= ", idx)
   tmp = cv2.resize(cv2.imread(x_paths[idx]),(512,512))
-  x_img[idx] = tmp
+  x_imgTrainData[idx] = tmp
+
+for idx in range(0, len(x_pathsValData)):
+  tmp = cv2.resize(cv2.imread(x_paths[idx]),(512,512))
+  x_imgValData[idx] = tmp
 print("durch mit x_img schleife")
 #print(x_img[0])
 
-x_img = np.array(x_img)
+x_imgTrainData = np.array(x_imgTrainData)
+x_imgValData = np.array(x_imgValData)
+
+print(x_imgTrainData.shape, " ", x_imgValData.shape) 
+
 #print("x_img: ", x_img)
 
 y_2D_labelBox = []
@@ -73,6 +86,13 @@ for y_path in y_paths:
 y_2D_labelBox = np.array(y_2D_labelBox)
 y_3D_labelBox = np.array(y_3D_labelBox)
 
+y_2D_labelTrainData =  y_2D_labelBox[0:700]
+y_2D_labelValData = y_2D_labelBox[700:]
+
+y_3D_labelTrainData = y_3D_labelBox[0:700]
+y_3D_labelValData =  y_3D_labelBox[700:]
+
+
 print("parser durch")
 #print("2D label: ",y_2D_labelBox)
 #print("3D label: ", y_3D_labelBox)
@@ -90,36 +110,36 @@ def getCreated2DModel():
   conv3 = Conv2D(32, (1, 1), activation='relu', padding='same')(conv3)
   conv3 = Conv2D(64, (3, 3), activation='relu', padding='same')(conv3)
   pool3 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv3)
-#  conv1 = Conv2D(32, (3, 3), activation='relu', padding='same')(inputs)
-#  pool1 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv1)
-#  
-#  conv2 = Conv2D(64, (3, 3), activation='relu', padding='same')(pool1)
-#  pool2 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv2)
-#  
-#  conv3 = Conv2D(128, (3, 3), activation='relu', padding='same')(pool2)
-#  conv3 = Conv2D(64, (1, 1), activation='relu', padding='same')(conv3)
-#  conv3 = Conv2D(128, (3, 3), activation='relu', padding='same')(conv3)
-#  pool3 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv3)
-#
-#  conv4 = Conv2D(256, (3, 3), activation='relu', padding='same')(pool3)
-#  conv4 = Conv2D(128, (1, 1), activation='relu', padding='same')(conv4)
-#  conv4 = Conv2D(256, (3, 3), activation='relu', padding='same')(conv4)
-#  pool4 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv4)
-#
-#  conv5 = Conv2D(512, (3, 3), activation='relu', padding='same')(pool4)
-#  conv5 = Conv2D(256, (1, 1), activation='relu', padding='same')(conv5)
-#  conv5 = Conv2D(512, (3, 3), activation='relu', padding='same')(conv5)
-#  conv5 = Conv2D(256, (1, 1), activation='relu', padding='same')(conv5)
-#  conv5 = Conv2D(512, (3, 3), activation='relu', padding='same')(conv5)
-#  pool5 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv5)
-#
-#  conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(pool5)
-#  conv6 = Conv2D(512, (1, 1), activation='relu', padding='same')(conv6)
-#  conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(conv6)
-#  conv6 = Conv2D(512, (1, 1), activation='relu', padding='same')(conv6)
-#  conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(conv6)
+  conv1 = Conv2D(32, (3, 3), activation='relu', padding='same')(inputs)
+  pool1 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv1)
+  
+  conv2 = Conv2D(64, (3, 3), activation='relu', padding='same')(pool1)
+  pool2 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv2)
+  
+  conv3 = Conv2D(128, (3, 3), activation='relu', padding='same')(pool2)
+  conv3 = Conv2D(64, (1, 1), activation='relu', padding='same')(conv3)
+  conv3 = Conv2D(128, (3, 3), activation='relu', padding='same')(conv3)
+  pool3 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv3)
 
-#  conv7 = Conv2D(1024, (1, 1), activation='relu', padding='same')(pool3)
+  conv4 = Conv2D(256, (3, 3), activation='relu', padding='same')(pool3)
+  conv4 = Conv2D(128, (1, 1), activation='relu', padding='same')(conv4)
+  conv4 = Conv2D(256, (3, 3), activation='relu', padding='same')(conv4)
+  pool4 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv4)
+
+  conv5 = Conv2D(512, (3, 3), activation='relu', padding='same')(pool4)
+  conv5 = Conv2D(256, (1, 1), activation='relu', padding='same')(conv5)
+  conv5 = Conv2D(512, (3, 3), activation='relu', padding='same')(conv5)
+  conv5 = Conv2D(256, (1, 1), activation='relu', padding='same')(conv5)
+  conv5 = Conv2D(512, (3, 3), activation='relu', padding='same')(conv5)
+  pool5 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv5)
+
+  conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(pool5)
+  conv6 = Conv2D(512, (1, 1), activation='relu', padding='same')(conv6)
+  conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(conv6)
+  conv6 = Conv2D(512, (1, 1), activation='relu', padding='same')(conv6)
+  conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(conv6)
+
+  conv7 = Conv2D(1024, (1, 1), activation='relu', padding='same')(pool3)
 
   conv7 = Conv2D(1024, (1, 1), activation='relu', padding='same')(pool3)
   avgpool = GlobalAveragePooling2D()(conv7)
@@ -187,8 +207,8 @@ print("vor fit")
 #keras.callbacks.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, patience=0, verbose=0, mode='auto', baseline=None, restore_best_weights=False)
 #keras.callbacks.tensorboard_v1.TensorBoard(log_dir='./logs', histogram_freq=0, batch_size=32, write_graph=True, write_grads=False, write_images=False, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None, embeddings_data=None, update_freq='epoch')
 filepath="./"
-callbacks = [ModelCheckpoint(filepath, monitor='val_loss', verbose=0, save_best_only=False, save_weights_only=False, mode='auto', period=5)]
-hist = model.fit(x_img, y_2D_labelBox, batch_size=16, epochs=100, callbacks=callbacks)
+#callbacks = [ModelCheckpoint(filepath, monitor='val_loss', verbose=0, save_best_only=False, save_weights_only=False, mode='auto', period=5)]
+hist = model.fit(x_imgTrainData, y_2D_labelTrainData, batch_size=16, epochs=160)
 print("nach fit")
 
 plt.figure(200)
@@ -196,7 +216,7 @@ plt.title("Loss")
 plt.plot(hist.history["loss"])
 
 #plt.figure(201)
-#plt.title("val_loss")
+#plt.title("learningrate")
 #plt.plot(hist.history["val_loss"])
 
 
