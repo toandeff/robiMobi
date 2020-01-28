@@ -4,9 +4,6 @@ Created on Thu Jan  9 16:49:35 2020
 
 @author: rglabor07
 """
-
-import tensorflow as tf
-
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import numpy as np
@@ -19,103 +16,69 @@ from skimage.transform import resize
 import imgaug as ia
 import imgaug.augmenters as iaa
 from imgaug.augmentables.segmaps import SegmentationMapsOnImage
+from imgaug.augmentables.bbs import BoundingBox, BoundingBoxesOnImage
 
 import cv2
+import os
+import parser as Parser
 
-
-show_image = False
+show_image = True
 
 # define the augmentation
+#seq1 = iaa.Sequential([ iaa.Affine(rotate=(-30,30))]) # Augmentation for images and masks
+seq2 = iaa.Sequential([ iaa.Dropout([0.1,0.5])])      # Augmentation for images
 
-def visualizeImageAndLabel(image, label):
-    fig,ax = plt.subplots(1)
-    plt.title("image")
-    ax.imshow(image)
-
-    yValueLabel = label[0]
-    xValueLabel = label[1]
-    widthLabel = label[2]
-    heightLabel = label[3]
-    rectLabel = patches.Rectangle((xValueLabel, yValueLabel), widthLabel, heightLabel, linewidth=1,edgecolor='b',facecolor='none')
-    ax.add_patch(rectLabel)
+def visualizeImageAndLabel(image, label, image_aug, label_aug):
+    image_before = label.draw_on_image(image, size = 2)
+    image_after = label_aug.draw_on_image(image_aug, size=2, color=[255, 255, 255])
+ 
     
-    plt.show()
-
-#aufruf der klasse mit x_path, y_path und der batchsize
+    plt.figure(2000)
+    plt.title("image")
+    plt.imshow(image_before)
+    
+    plt.figure(2001)
+    plt.title("image augmented")
+    plt.imshow(image_after)
+    
+#aufruf der klasse mit x_path, y_label und der batchsize
 #unterscheidung zwischen 2d und 3d?? mit einem flag oder wie?
-class Generator(Sequence):
+class Generator():
+        
+    def __init__(self, imgs, labels):
+        self.images = imgs
+        self.labels = labels
+        for idx in range(len(self.images)):
+            self.__getitem__(idx)
 
-    def __init__(self, x_paths, y_paths, batchsize, scale=1/255, dim=(32,32,32), validation = False,n_channels=1, n_classes=10, shuffle=True):
-        self.x_path = x_paths 
-        self.y_path = y_paths
-        self.scale = scale
-        self.batchsize = batchsize
-        # aenderbare default values
-        self.dim = dim
-        self.n_channels = n_channels
-        self.n_classes = n_classes
-        self.shuffle = shuffle
-        self.on_epoch_end()
-        self.validation = validation
-
-    def __len__(self):
-        return int(np.ceil(len(self.x_path) / float(self.batchsize))) #
 
     def __getitem__(self, idx):
-#        indexes = self.indexes[idx*self.batchsize:(idx+1)*self.batchsize]     
-#        list_IDS_temp = [self.x_path[k] for k in indexes]
-#        X,y = self.__data_generation(list_IDS_temp)
         
-        X = np.zeros(shape=(self.batchsize, 512,512,3))
+
+        image_augmented = np.zeros(shape=(512,512,3)) 
+        label_augmented = np.zeros(shape=(1))
+
+        X = self.images[idx]
         
-        # hier muss zwischen 2d und 3d unterschieden werden da
-        # die anzahl der werte im Array unterschielich lang ist und somit 
-        # muss die array anderst aufgebaut werden um anschließend verändert werden zu können
-        Y = np.zeros(shape=(self.batchsize, 512,512)) 
-#        print("shape of X: ", X.shape)
-#        print("shape of Y: ", Y.shape)
-        image_augmented = np.zeros(shape=(self.batchsize, 512,512,3)) 
-        label_augmented = np.zeros(shape=(self.batchsize, 512,512))
-        #TODOO ab hier anpassen 
-        try:
-            for i in range (0, self.batchsize):
-                current_idx = (idx * self.batchsize + i)
-                X[i] = cv2.resize(cv2.imread(self.x_path[current_idx]),(512,512))
-                
-                Y[i] = cv2.resize(cv2.imread(self.y_path[current_idx])[:,:,0],(512,512))#[:,:,:,0]
-                
-                if not self.validation:                   
-                    seq1 = iaa.Sequential([ iaa.Affine(rotate=(-30,30))])
-                    #seq2 = iaa.Sequential([iaa.Dropout(p=0.5)])            
-                            
-                    seq1.deterministic = True
-                    
-                    image_augmented[i] = seq1.augment_image(image=X[i])
-                    #image_augmented[i] = seq2.augment_image(image_augmented[i])
-                    label_augmented[i] = seq1.augment_image(image=Y[i])
-                    
-    #                print("img.shape = ",image_augmented[i].shape)
-    #                print("mask.shape = ",mask_augmented[i].shape)
+        Y = BoundingBoxesOnImage([
+            BoundingBox(x1=self.labels[idx][0], y1=self.labels[idx][1], 
+                        x2=self.labels[idx][2], y2=self.labels[idx][3]),], shape=X[idx].shape)
+        self.labels[idx]
+        print("labels values: (%.4f, %.4f, %.4f, %.4f)"%( 
+              self.labels[idx][0], self.labels[idx][1], self.labels[idx][2], self.labels[idx][3]))
+
+        seq1 = iaa.Sequential([iaa.Multiply((1.2, 1.5)) # change brightness
+                               ,iaa.Affine(translate_px={"x":40, "y":60} , scale=(0.5, 0.7))             
+#                                  ,iaa.Affine(rotate=(-30,30)) 
+                               ])
+        #seq2 = iaa.Sequential([iaa.Dropout(p=0.5)])                  
+        seq1.deterministic = True
+        
+        image_augmented, label_augmented = seq1(image=X,  bounding_boxes=Y)
+        #image_augmented[i] = seq2.augment_image(image_augmented[i])
+  
+        if show_image:
+            visualizeImageAndLabel(X, Y, image_augmented ,label_augmented)
+
     
-                    #visualizeImageAndMask(image_augmented,mask_augmented)
-    
-    
-            if show_image:
-#                bild1 = Y[0]  
-#                plt.imshow(X[0])
-#                plt.imshow(Y[0])
-                visualizeImageAndLabel(image_augmented ,label_augmented)
-                
-            X = np.concatenate((X, image_augmented), axis=0)
-            Y = np.concatenate((Y, label_augmented), axis=0)
-            # von y die 2 dimensionen weg lasssen = 512,512,1
-#            print(Y.shape)
-#            Y = Y[:,:,:,0]
-#            print(Y.shape)
-#            np.reshape(Y, (64,512, 512, 1))
-        except IndexError:
-            print("index error", current_idx)
-            pass
-            
-            
-        return X,Y[...,np.newaxis]
+        

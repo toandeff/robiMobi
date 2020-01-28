@@ -30,7 +30,7 @@ from generator import Generator
 #zip_ref = zipfile.ZipFile(root_path + "/synthetic.zip", 'r')
 #zip_ref.extractall("/tmp")
 #zip_ref.close()
-
+generateData = True
 # train data and labels
 directory_path = './synthetic/'
 data = listdir(directory_path)
@@ -38,6 +38,7 @@ data = listdir(directory_path)
 x_paths = []
 y_paths = []
 data = np.array(data)
+print("schleife beginnt jetzt")
 for dataIdx in range (len(data)):
     if os.path.splitext(data[dataIdx])[1][1:] == "png":
         x_paths.append(directory_path + data[dataIdx])
@@ -45,8 +46,16 @@ for dataIdx in range (len(data)):
         y_paths.append(directory_path + data[dataIdx])
 x_paths = np.array(x_paths)
 y_paths = np.array(y_paths)
-x_pathsTrainData = x_paths[0:700]
-x_pathsValData = x_paths[700:]
+
+
+
+splitTrainValData = int(len(x_paths) * 0.7) # splits the data to get 70 % Training Data and 30 % Validation Data
+
+if len(x_paths) * 0.7 < 1:
+    splitTrainValData = 1
+
+x_pathsTrainData = x_paths[0:splitTrainValData]
+x_pathsValData = x_paths[splitTrainValData:]
 print(len(x_pathsTrainData), " " ,len(x_pathsValData))
 x_imgTrainData = np.zeros(shape=(len(x_pathsTrainData),512,512,3))
 x_imgValData = np.zeros(shape=(len(x_pathsValData),512,512,3))
@@ -86,12 +95,15 @@ for y_path in y_paths:
 y_2D_labelBox = np.array(y_2D_labelBox)
 y_3D_labelBox = np.array(y_3D_labelBox)
 
-y_2D_labelTrainData =  y_2D_labelBox[0:700]
-y_2D_labelValData = y_2D_labelBox[700:]
+y_2D_labelTrainData =  y_2D_labelBox[0:splitTrainValData]
+y_2D_labelValData = y_2D_labelBox[splitTrainValData:]
 
-y_3D_labelTrainData = y_3D_labelBox[0:700]
-y_3D_labelValData =  y_3D_labelBox[700:]
+y_3D_labelTrainData = y_3D_labelBox[0:splitTrainValData]
+y_3D_labelValData =  y_3D_labelBox[splitTrainValData:]
 
+
+if generateData:
+    Generator(x_imgTrainData, y_2D_labelTrainData) # return (x_img append new_img)
 
 print("parser durch")
 #print("2D label: ",y_2D_labelBox)
@@ -144,7 +156,10 @@ def getCreated2DModel():
   conv7 = Conv2D(1024, (1, 1), activation='relu', padding='same')(pool3)
   avgpool = GlobalAveragePooling2D()(conv7)
 
-  outputs = Dense(4, activation='softmax')(avgpool)
+
+  
+  # falsche aktivierungsfunktion
+  outputs = Dense(4, activation='linear')(avgpool)
 
   model = Model(inputs=inputs, outputs=outputs)
 
@@ -198,43 +213,46 @@ def getCreated3DModel():
 model = getCreated2DModel()
 
 print("vor compile")
-model.compile(optimizer='adam', loss='binary_crossentropy')
+# falsche loss funktion
+model.compile(optimizer='adam', loss='mean_squared_error', metrics=['mean_absolute_error'])
 print("nach compile")
-#generator = Generator(x_paths, y_2D_labelBox, 16) # yPaths brauchen wir nicht
-#histGenerator = model.fit_generator(generator, steps_per_epoch=1000, epochs=10)
+
 print("vor fit")
 #keras.callbacks.callbacks.ModelCheckpoint(filepath, monitor='val_loss', verbose=0, save_best_only=False, save_weights_only=False, mode='auto', period=1)
 #keras.callbacks.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, patience=0, verbose=0, mode='auto', baseline=None, restore_best_weights=False)
 #keras.callbacks.tensorboard_v1.TensorBoard(log_dir='./logs', histogram_freq=0, batch_size=32, write_graph=True, write_grads=False, write_images=False, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None, embeddings_data=None, update_freq='epoch')
 filepath="./"
 #callbacks = [ModelCheckpoint(filepath, monitor='val_loss', verbose=0, save_best_only=False, save_weights_only=False, mode='auto', period=5)]
-hist = model.fit(x_imgTrainData, y_2D_labelTrainData, batch_size=16, epochs=160)
-print("nach fit")
-
-plt.figure(200)
-plt.title("Loss")
-plt.plot(hist.history["loss"])
-
-#plt.figure(201)
-#plt.title("learningrate")
-#plt.plot(hist.history["val_loss"])
-
+#generator = Generator(x_pathsTrainData, y_2D_labelTrainData, 16)
+#generatorValidation = Generator(x_pathsValData, y_2D_labelValData, 16, validation=True)
+#
+#histGenerator = model.fit_generator(generator, validation_data=generatorValidation, steps_per_epoch=1000, epochs=10)
+hist = model.fit(x_imgTrainData, y_2D_labelTrainData, validation_data = (x_imgValData, y_2D_labelValData), batch_size=16, epochs=10)
 
 #
-#x_img = np.zeros(shape=(len(x_paths),512,512,3))
-#  x_img[idx] = cv2.resize(cv2.imread(x_paths[idx]),(512,512))
-#  
+print("nach fit")
+#
+for cnt,key in enumerate(hist.history.keys()):
+    
+    plt.figure(999 + cnt)
+    plt.plot(hist.history[key])
+    plt.title(key.replace("_"," "))
+
+#for cnt, key in enumerate(histGenerator.history.keys()):
+#    plt.figure(999 + cnt)
+#    plt.plot(histGenerator.history[key])
+#    plt.title(key.replace("_"," "))
 
 #-------------------
 predImg = np.zeros(shape=(1,512,512,3))
-img = cv2.imread("./synthetic/000100.is.png")
+img = cv2.imread("./synthetic/000000.is.png")
 predImg[0] = cv2.resize(img,(512,512))
 
-parser = Parser("./synthetic/000100.json")
+parser = Parser("./synthetic/000000.json")
 #-------------------
 
 predictedData = model.predict(predImg)
-
+predictedData[predictedData < 0] = 0
 
 imgLabel = parser.get_2D_data()
 
@@ -249,13 +267,13 @@ fig,ax = plt.subplots(1)
 ax.imshow(img)
 yValue = predictedData.item(0)*512
 xValue = predictedData.item(1)*512
-width = predictedData.item(2)*512-yValue
-height = predictedData.item(3)*512-xValue
+width = predictedData.item(2)*512 - yValue
+height = predictedData.item(3)*512 - xValue
 
 
 yValueLabel = imgLabel[0]*512
 xValueLabel = imgLabel[1]*512
-widthLabel = imgLabel[2]*512-yValueLabel
+widthLabel = imgLabel[2]*512 - yValueLabel
 heightLabel = imgLabel[3]*512 - xValueLabel
 
 rectLabel = patches.Rectangle((xValueLabel,yValueLabel),widthLabel,heightLabel,linewidth=1,edgecolor='b',facecolor='none')
@@ -264,94 +282,3 @@ ax.add_patch(rectLabel)
 rectPred = patches.Rectangle((xValue,yValue),width,height,linewidth=1,edgecolor='r',facecolor='none')
 ax.add_patch(rectPred)
 plt.show()
-
-
-
-
-
-predImg = np.zeros(shape=(1,512,512,3))
-img = cv2.imread("./synthetic/000200.is.png")
-predImg[0] = cv2.resize(img,(512,512))
-
-parser = Parser("./synthetic/000200.json")
-#-------------------
-
-predictedData = model.predict(predImg)
-
-
-imgLabel = parser.get_2D_data()
-
-print("myData: ", imgLabel)
-print("myPredictedData: ", predictedData, " ", len(predictedData))
-
-
-import matplotlib.patches as patches
-
-fig2,ax = plt.subplots(1)
-
-ax.imshow(img)
-yValue = predictedData.item(0)*512
-xValue = predictedData.item(1)*512
-width = predictedData.item(2)*512-yValue
-height = predictedData.item(3)*512-xValue
-
-
-yValueLabel = imgLabel[0]*512
-xValueLabel = imgLabel[1]*512
-widthLabel = imgLabel[2]*512-yValueLabel
-heightLabel = imgLabel[3]*512 - xValueLabel
-
-rectLabel = patches.Rectangle((xValueLabel,yValueLabel),widthLabel,heightLabel,linewidth=1,edgecolor='b',facecolor='none')
-ax.add_patch(rectLabel)
-
-rectPred = patches.Rectangle((xValue,yValue),width,height,linewidth=1,edgecolor='r',facecolor='none')
-ax.add_patch(rectPred)
-plt.show()
-
-
-predImg_1 = np.zeros(shape=(1,512,512,3))
-img_1 = cv2.imread("./synthetic/000001.is.png")
-predImg_1[0] = cv2.resize(img_1,(512,512))
-
-parser_1 = Parser("./synthetic/000001.json")
-#-------------------
-
-predictedData_1 = model.predict(predImg_1)
-
-
-imgLabel_1 = parser_1.get_2D_data()
-
-print("myData: ", imgLabel_1)
-print("myPredictedData: ", predictedData_1, " ", len(predictedData_1))
-
-
-import matplotlib.patches as patches
-
-fig3,ax_1 = plt.subplots(1)
-
-ax_1.imshow(img_1)
-yValue_1 = predictedData_1.item(0)*512
-xValue_1 = predictedData_1.item(1)*512
-width_1 = predictedData_1.item(2)*512-yValue_1
-height_1 = predictedData_1.item(3)*512-xValue_1
-
-
-yValueLabel_1 = imgLabel_1[0]*512
-xValueLabel_1 = imgLabel_1[1]*512
-widthLabel_1 = imgLabel_1[2]*512-yValueLabel_1
-heightLabel_1 = imgLabel_1[3]*512 - xValueLabel_1
-
-rectLabel_1 = patches.Rectangle((xValueLabel_1,yValueLabel_1),widthLabel_1,heightLabel_1,linewidth=1,edgecolor='b',facecolor='none')
-ax_1.add_patch(rectLabel_1)
-
-rectPred_1 = patches.Rectangle((xValue_1,yValue_1),width_1,height_1,linewidth=1,edgecolor='r',facecolor='none')
-ax_1.add_patch(rectPred_1)
-plt.show()
-#x_neuBilder
-#for bilder in x_neuBilder:
-#  (x,y, breite, hoehe) = hist.predict(x) 
-#  cv2.drawRactangle(x,y,breite,hoehe)
-
-
-#(x, y, breite, hoehe) = hist.predict(bild1)
-#cv2.drawRactangle(x, y, breite,hoehe)
