@@ -47,8 +47,6 @@ for dataIdx in range (len(data)):
 x_paths = np.array(x_paths)
 y_paths = np.array(y_paths)
 
-
-
 splitTrainValData = int(len(x_paths) * 0.7) # splits the data to get 70 % Training Data and 30 % Validation Data
 
 if len(x_paths) * 0.7 < 1:
@@ -75,9 +73,6 @@ print("durch mit x_img schleife")
 x_imgTrainData = np.array(x_imgTrainData)
 x_imgValData = np.array(x_imgValData)
 
-print(x_imgTrainData.shape, " ", x_imgValData.shape) 
-
-#print("x_img: ", x_img)
 
 y_2D_labelBox = []
 y_3D_labelBox = []
@@ -91,6 +86,9 @@ for y_path in y_paths:
     y_2D_labelBox.append(parser.get_2D_data())
     y_3D_labelBox.append(parser.get_3D_data())
     y_centerPoint_Label.append(parser.get_centerPoint())
+    
+
+# split data into training data and test data
 
 y_2D_labelBox = np.array(y_2D_labelBox)
 y_3D_labelBox = np.array(y_3D_labelBox)
@@ -103,12 +101,10 @@ y_3D_labelValData =  y_3D_labelBox[splitTrainValData:]
 
 
 if generateData:
-    Generator(x_imgTrainData, y_2D_labelTrainData) # return (x_img append new_img)
+    gen_2d = Generator(x_imgTrainData, y_2D_labelTrainData, x_imgValData, y_2D_labelValData) # return (x_img append new_img)
+    [x_imgTrainData, y_2D_labelTrainData, x_imgValData, y_2D_labelValData] = gen_2d.get_data_after_augment()
 
 print("parser durch")
-#print("2D label: ",y_2D_labelBox)
-#print("3D label: ", y_3D_labelBox)
-
 def getCreated2DModel():
   inputs = Input((512,512,3))   #evtl anpassen
  
@@ -227,7 +223,7 @@ filepath="./"
 #generatorValidation = Generator(x_pathsValData, y_2D_labelValData, 16, validation=True)
 #
 #histGenerator = model.fit_generator(generator, validation_data=generatorValidation, steps_per_epoch=1000, epochs=10)
-hist = model.fit(x_imgTrainData, y_2D_labelTrainData, validation_data = (x_imgValData, y_2D_labelValData), batch_size=16, epochs=10)
+hist = model.fit(x_imgTrainData, y_2D_labelTrainData, validation_data = (x_imgValData, y_2D_labelValData), batch_size=32, epochs=160)
 
 #
 print("nach fit")
@@ -245,10 +241,10 @@ for cnt,key in enumerate(hist.history.keys()):
 
 #-------------------
 predImg = np.zeros(shape=(1,512,512,3))
-img = cv2.imread("./synthetic/000000.is.png")
+img = cv2.resize(cv2.imread("./synthetic/000011.is.png"),(512,512))
 predImg[0] = cv2.resize(img,(512,512))
 
-parser = Parser("./synthetic/000000.json")
+parser = Parser("./synthetic/000011.json")
 #-------------------
 
 predictedData = model.predict(predImg)
