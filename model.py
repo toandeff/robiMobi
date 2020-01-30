@@ -9,9 +9,9 @@ root_path = 'drive/My Drive/Colab_Notebooks'  #change dir to your project folder
 import tensorflow as tf
 
 import numpy as np
-from keras.layers import BatchNormalization, Activation, Input, Dense, Conv2D, MaxPooling2D, GlobalAveragePooling2D, UpSampling2D, Conv2DTranspose, concatenate
+from keras.layers import BatchNormalization, Activation, Input, Dense, Conv2D, MaxPooling2D, Dropout, GlobalAveragePooling2D, UpSampling2D, Conv2DTranspose, concatenate
 from keras.models import Model
-from keras.callbacks import EarlyStopping,ModelCheckpoint
+from keras.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard, ReduceLROnPlateau
 from keras.optimizers import Adam
 import matplotlib.pyplot as plt
 
@@ -106,17 +106,7 @@ if generateData:
 print("parser durch")
 def getCreated2DModel():
   inputs = Input((512,512,3))   #evtl anpassen
- 
-  conv1 = Conv2D(16, (3, 3), activation='relu', padding='same')(inputs)
-  pool1 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv1)
   
-  conv2 = Conv2D(32, (3, 3), activation='relu', padding='same')(pool1)
-  pool2 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv2)
-  
-  conv3 = Conv2D(64, (3, 3), activation='relu', padding='same')(pool2)
-  conv3 = Conv2D(32, (1, 1), activation='relu', padding='same')(conv3)
-  conv3 = Conv2D(64, (3, 3), activation='relu', padding='same')(conv3)
-  pool3 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv3)
   conv1 = Conv2D(32, (3, 3), activation='relu', padding='same')(inputs)
   pool1 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv1)
   
@@ -133,6 +123,8 @@ def getCreated2DModel():
   conv4 = Conv2D(256, (3, 3), activation='relu', padding='same')(conv4)
   pool4 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv4)
 
+#  drop4 = Dropout(0.2)(pool4)
+  
   conv5 = Conv2D(512, (3, 3), activation='relu', padding='same')(pool4)
   conv5 = Conv2D(256, (1, 1), activation='relu', padding='same')(conv5)
   conv5 = Conv2D(512, (3, 3), activation='relu', padding='same')(conv5)
@@ -140,20 +132,17 @@ def getCreated2DModel():
   conv5 = Conv2D(512, (3, 3), activation='relu', padding='same')(conv5)
   pool5 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv5)
 
+#  drop5 = Dropout(0.2)(pool5)
+
   conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(pool5)
   conv6 = Conv2D(512, (1, 1), activation='relu', padding='same')(conv6)
   conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(conv6)
   conv6 = Conv2D(512, (1, 1), activation='relu', padding='same')(conv6)
   conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(conv6)
 
-  conv7 = Conv2D(1024, (1, 1), activation='relu', padding='same')(pool3)
-
-  conv7 = Conv2D(1024, (1, 1), activation='relu', padding='same')(pool3)
+  conv7 = Conv2D(1024, (1, 1), activation='relu', padding='same')(conv6)
   avgpool = GlobalAveragePooling2D()(conv7)
 
-
-  
-  # falsche aktivierungsfunktion
   outputs = Dense(4, activation='linear')(avgpool)
 
   model = Model(inputs=inputs, outputs=outputs)
@@ -161,68 +150,76 @@ def getCreated2DModel():
   return model
 
 
-def getCreated3DModel():
-  inputs = Input((512,512,3))   #evtl anpassen
-
-  conv1 = Conv2D(32, (3, 3), activation='relu', padding='same')(inputs)
-  pool1 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv1)
-
-  conv2 = Conv2D(64, (3, 3), activation='relu', padding='same')(pool1)
-  pool2 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv2)
-
-  conv3 = Conv2D(128, (3, 3), activation='relu', padding='same')(pool2)
-  conv3 = Conv2D(64, (1, 1), activation='relu', padding='same')(conv3)
-  conv3 = Conv2D(128, (3, 3), activation='relu', padding='same')(conv3)
-  pool3 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv3)
-
-  conv4 = Conv2D(256, (3, 3), activation='relu', padding='same')(pool3)
-  conv4 = Conv2D(128, (1, 1), activation='relu', padding='same')(conv4)
-  conv4 = Conv2D(256, (3, 3), activation='relu', padding='same')(conv4)
-  pool4 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv4)
-
-
-  conv5 = Conv2D(512, (3, 3), activation='relu', padding='same')(pool4)
-  conv5 = Conv2D(256, (1, 1), activation='relu', padding='same')(conv5)
-  conv5 = Conv2D(512, (3, 3), activation='relu', padding='same')(conv5)
-  conv5 = Conv2D(256, (1, 1), activation='relu', padding='same')(conv5)
-  conv5 = Conv2D(512, (3, 3), activation='relu', padding='same')(conv5)
-  pool5 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv5)
-
-  conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(pool5)
-  conv6 = Conv2D(512, (1, 1), activation='relu', padding='same')(conv6)
-  conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(conv6)
-  conv6 = Conv2D(512, (1, 1), activation='relu', padding='same')(conv6)
-  conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(conv6)
-  conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(conv6)
-  conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(conv6)
-
-  conv7 = Conv2D(1024, (3, 3), activation='relu', padding='same')(conv6)
-  avgpool = GlobalAveragePooling2D()(conv7)
-  # output muss mehr als 4 sein da wir für die 3d Boundingbox 24 werte brauchen
-  outputs = Dense(24, activation='sigmoid')(avgpool)
-
-  model = Model(inputs=inputs, outputs=outputs)
-
-  return model
+#def getCreated3DModel():
+#  inputs = Input((512,512,3))   #evtl anpassen
+#
+#  conv1 = Conv2D(32, (3, 3), activation='relu', padding='same')(inputs)
+#  pool1 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv1)
+#
+#  conv2 = Conv2D(64, (3, 3), activation='relu', padding='same')(pool1)
+#  pool2 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv2)
+#
+#  conv3 = Conv2D(128, (3, 3), activation='relu', padding='same')(pool2)
+#  conv3 = Conv2D(64, (1, 1), activation='relu', padding='same')(conv3)
+#  conv3 = Conv2D(128, (3, 3), activation='relu', padding='same')(conv3)
+#  pool3 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv3)
+#
+#  conv4 = Conv2D(256, (3, 3), activation='relu', padding='same')(pool3)
+#  conv4 = Conv2D(128, (1, 1), activation='relu', padding='same')(conv4)
+#  conv4 = Conv2D(256, (3, 3), activation='relu', padding='same')(conv4)
+#  pool4 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv4)
+#  
+##  drop4 = Dropout(0.2)(pool4)
+#
+#  conv5 = Conv2D(512, (3, 3), activation='relu', padding='same')(pool4)
+#  conv5 = Conv2D(256, (1, 1), activation='relu', padding='same')(conv5)
+#  conv5 = Conv2D(512, (3, 3), activation='relu', padding='same')(conv5)
+#  conv5 = Conv2D(256, (1, 1), activation='relu', padding='same')(conv5)
+#  conv5 = Conv2D(512, (3, 3), activation='relu', padding='same')(conv5)
+#  pool5 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv5)
+#
+##  drop5 = Dropout(0.2)(pool5)
+#
+#  conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(pool5)
+#  conv6 = Conv2D(512, (1, 1), activation='relu', padding='same')(conv6)
+#  conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(conv6)
+#  conv6 = Conv2D(512, (1, 1), activation='relu', padding='same')(conv6)
+#  conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(conv6)
+#  conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(conv6)
+#  conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(conv6)
+#
+#  conv7 = Conv2D(1024, (3, 3), activation='relu', padding='same')(conv6)
+#  avgpool = GlobalAveragePooling2D()(conv7)
+#
+#  outputs = Dense(24, activation='sigmoid')(avgpool)
+#
+#  model = Model(inputs=inputs, outputs=outputs)
+#
+#  return model
 
 model = getCreated2DModel()
 
 print("vor compile")
 # falsche loss funktion
-model.compile(optimizer='adam', loss='mean_squared_error', metrics=['mean_absolute_error'])
+#adam = Adam(learning_rate=0.0001, beta_1=0.9, beta_2=0.999, amsgrad=False)
+model.compile(optimizer="adam", loss='mean_squared_error', metrics=['mean_absolute_error'])
 print("nach compile")
 
 print("vor fit")
 #keras.callbacks.callbacks.ModelCheckpoint(filepath, monitor='val_loss', verbose=0, save_best_only=False, save_weights_only=False, mode='auto', period=1)
 #keras.callbacks.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, patience=0, verbose=0, mode='auto', baseline=None, restore_best_weights=False)
 #keras.callbacks.tensorboard_v1.TensorBoard(log_dir='./logs', histogram_freq=0, batch_size=32, write_graph=True, write_grads=False, write_images=False, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None, embeddings_data=None, update_freq='epoch')
-filepath = "./model_"+(datetime.now().strftime("%Y_%m_%d_%H_%M_%S")).replace(" ","_")+".h5"
-callbacks = [ModelCheckpoint(filepath, monitor='val_loss', verbose=0, save_best_only=True, save_weights_only=False, mode='auto', period=2)]
+filepath = "./model_"+(datetime.now().strftime("%Y_%m_%d_%H_%M_%S")).replace(" ","_")+"_epoch({epoch:02d})-val_loss({val_loss:.4f})-loss({loss:.4f}).hdf5"
+callbacks = [ModelCheckpoint(filepath, monitor='val_loss', verbose=0, save_best_only=True, save_weights_only=False, mode='min', period=1)
+             ,EarlyStopping(monitor='val_loss', min_delta=0, patience=10, verbose=0, mode='min', baseline=None, restore_best_weights=False) # stops after 5 epochs if the val_loss doesnt decrease
+             ,TensorBoard(log_dir='.\\', histogram_freq=1, batch_size=16,profile_batch = 100000000, write_graph=True, write_grads=True, write_images=True, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None, embeddings_data=None, update_freq='epoch')
+             ,ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=3, verbose=1, mode='min', min_delta=0.0001, cooldown=0, min_lr=0)
+             ]
 #generator = Generator(x_pathsTrainData, y_2D_labelTrainData, 16)
 #generatorValidation = Generator(x_pathsValData, y_2D_labelValData, 16, validation=True)
 #
 #histGenerator = model.fit_generator(generator, validation_data=generatorValidation, steps_per_epoch=1000, epochs=10)
-hist = model.fit(x_imgTrainData, y_2D_labelTrainData, validation_data = (x_imgValData, y_2D_labelValData), batch_size=32, epochs=20, callbacks=callbacks)
+hist = model.fit(x_imgTrainData, y_2D_labelTrainData, validation_data = (x_imgValData, y_2D_labelValData), batch_size=16, epochs=50, callbacks=callbacks)
 
 #
 print("nach fit")
@@ -238,42 +235,90 @@ for cnt,key in enumerate(hist.history.keys()):
 #    plt.plot(histGenerator.history[key])
 #    plt.title(key.replace("_"," "))
 
-#-------------------
-predImg = np.zeros(shape=(1,512,512,3))
-img = cv2.resize(cv2.imread("./synthetic/000011.is.png"),(512,512))
-predImg[0] = cv2.resize(img,(512,512))
+# here print 2d Box predicted images
+    
+#for i in range(100):
+#        
+#    #-------------------
+#    predImg = np.zeros(shape=(1,512,512,3))
+#    img = cv2.resize(cv2.imread("./synthetic/000"+str(800+i)+".is.png"),(512,512))
+#    predImg[0] = cv2.resize(img,(512,512))
+#    
+#    parser = Parser("./synthetic/000"+str(800+i)+".json")
+#    #-------------------
+#    predictedData = model.predict(predImg)
+#    predictedData[predictedData < 0] = 0
+#    
+#    imgLabel = parser.get_2D_data()
+#    
+#    print("myData: ", imgLabel)
+#    print("myPredictedData: ", predictedData, " ", len(predictedData))
+#    
+#    
+#    import matplotlib.patches as patches
+#    
+#    fig,ax = plt.subplots(1)
+#    
+#    ax.imshow(img)
+#    
+#    xValue = predictedData.item(1)*512
+#    yValue = predictedData.item(0)*512
+#    width = predictedData.item(3)*512 - xValue
+#    height = predictedData.item(2)*512 - yValue
+#    
+#    xValueLabel = imgLabel[1]*512
+#    yValueLabel = imgLabel[0]*512
+#    widthLabel = imgLabel[3]*512 - xValueLabel
+#    heightLabel = imgLabel[2]*512 - yValueLabel
+#    
+#    rectLabel = patches.Rectangle((xValueLabel,yValueLabel),widthLabel,heightLabel,linewidth=1,edgecolor='b',facecolor='none')
+#    ax.add_patch(rectLabel)
+#    
+#    rectPred = patches.Rectangle((xValue,yValue),width,height,linewidth=1,edgecolor='r',facecolor='none')
+#    ax.add_patch(rectPred)
+#    plt.show()
 
-parser = Parser("./synthetic/000011.json")
-#-------------------
-
-predictedData = model.predict(predImg)
-predictedData[predictedData < 0] = 0
-
-imgLabel = parser.get_2D_data()
-
-print("myData: ", imgLabel)
-print("myPredictedData: ", predictedData, " ", len(predictedData))
 
 
-import matplotlib.patches as patches
-
-fig,ax = plt.subplots(1)
-
-ax.imshow(img)
-yValue = predictedData.item(0)*512
-xValue = predictedData.item(1)*512
-width = predictedData.item(2)*512 - yValue
-height = predictedData.item(3)*512 - xValue
-
-
-yValueLabel = imgLabel[0]*512
-xValueLabel = imgLabel[1]*512
-widthLabel = imgLabel[2]*512 - yValueLabel
-heightLabel = imgLabel[3]*512 - xValueLabel
-
-rectLabel = patches.Rectangle((xValueLabel,yValueLabel),widthLabel,heightLabel,linewidth=1,edgecolor='b',facecolor='none')
-ax.add_patch(rectLabel)
-
-rectPred = patches.Rectangle((xValue,yValue),width,height,linewidth=1,edgecolor='r',facecolor='none')
-ax.add_patch(rectPred)
-plt.show()
+# here print 3d Box predicted images
+    
+#for i in range(10):
+#        
+#    #-------------------
+#    predImg = np.zeros(shape=(1,512,512,3))
+#    img = cv2.resize(cv2.imread("./synthetic/000"+str(800+i)+".is.png"),(512,512))
+#    predImg[0] = cv2.resize(img,(512,512))
+#    
+#    parser = Parser("./synthetic/000"+str(800+i)+".json")
+#    #-------------------
+#    predictedData = model.predict(predImg)
+#    predictedData[predictedData < 0] = 0
+#    
+#    imgLabel = parser.get_3D_data()
+#    
+#    print("myData: ", imgLabel)
+#    print("myPredictedData: ", predictedData, " ", len(predictedData))
+#    
+#    
+#    import matplotlib.patches as patches
+#    
+#    fig,ax = plt.subplots(1)
+#    
+#    ax.imshow(img)
+#    
+#    xValue = predictedData.item(1)*512
+#    yValue = predictedData.item(0)*512
+#    width = predictedData.item(3)*512 - xValue
+#    height = predictedData.item(2)*512 - yValue
+#    
+#    xValueLabel = imgLabel[1]*512
+#    yValueLabel = imgLabel[0]*512
+#    widthLabel = imgLabel[3]*512 - xValueLabel
+#    heightLabel = imgLabel[2]*512 - yValueLabel
+#    
+#    rectLabel = patches.Rectangle((xValueLabel,yValueLabel),widthLabel,heightLabel,linewidth=1,edgecolor='b',facecolor='none')
+#    ax.add_patch(rectLabel)
+#    
+#    rectPred = patches.Rectangle((xValue,yValue),width,height,linewidth=1,edgecolor='r',facecolor='none')
+#    ax.add_patch(rectPred)
+#    plt.show()
