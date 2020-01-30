@@ -29,7 +29,7 @@ from generator import Generator
 #zip_ref = zipfile.ZipFile(root_path + "/synthetic.zip", 'r')
 #zip_ref.extractall("/tmp")
 #zip_ref.close()
-generateData = True
+generateData = False
 # train data and labels
 directory_path = './synthetic/'
 data = listdir(directory_path)
@@ -98,10 +98,11 @@ y_2D_labelValData = y_2D_labelBox[splitTrainValData:]
 y_3D_labelTrainData = y_3D_labelBox[0:splitTrainValData]
 y_3D_labelValData =  y_3D_labelBox[splitTrainValData:]
 
-
 if generateData:
     gen_2d = Generator(x_imgTrainData, y_2D_labelTrainData, x_imgValData, y_2D_labelValData) # return (x_img append new_img)
     [x_imgTrainData, y_2D_labelTrainData, x_imgValData, y_2D_labelValData] = gen_2d.get_data_after_augment()
+#    gen3d = Generator(x_imgTrainData, y_3D_labelTrainData, x_imgValData, y_3D_labelValData) # return (x_img append new_img)
+
 
 print("parser durch")
 def getCreated2DModel():
@@ -150,59 +151,60 @@ def getCreated2DModel():
   return model
 
 
-#def getCreated3DModel():
-#  inputs = Input((512,512,3))   #evtl anpassen
-#
-#  conv1 = Conv2D(32, (3, 3), activation='relu', padding='same')(inputs)
-#  pool1 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv1)
-#
-#  conv2 = Conv2D(64, (3, 3), activation='relu', padding='same')(pool1)
-#  pool2 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv2)
-#
-#  conv3 = Conv2D(128, (3, 3), activation='relu', padding='same')(pool2)
-#  conv3 = Conv2D(64, (1, 1), activation='relu', padding='same')(conv3)
-#  conv3 = Conv2D(128, (3, 3), activation='relu', padding='same')(conv3)
-#  pool3 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv3)
-#
-#  conv4 = Conv2D(256, (3, 3), activation='relu', padding='same')(pool3)
-#  conv4 = Conv2D(128, (1, 1), activation='relu', padding='same')(conv4)
-#  conv4 = Conv2D(256, (3, 3), activation='relu', padding='same')(conv4)
-#  pool4 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv4)
-#  
-##  drop4 = Dropout(0.2)(pool4)
-#
-#  conv5 = Conv2D(512, (3, 3), activation='relu', padding='same')(pool4)
-#  conv5 = Conv2D(256, (1, 1), activation='relu', padding='same')(conv5)
-#  conv5 = Conv2D(512, (3, 3), activation='relu', padding='same')(conv5)
-#  conv5 = Conv2D(256, (1, 1), activation='relu', padding='same')(conv5)
-#  conv5 = Conv2D(512, (3, 3), activation='relu', padding='same')(conv5)
-#  pool5 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv5)
-#
-##  drop5 = Dropout(0.2)(pool5)
-#
-#  conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(pool5)
-#  conv6 = Conv2D(512, (1, 1), activation='relu', padding='same')(conv6)
-#  conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(conv6)
-#  conv6 = Conv2D(512, (1, 1), activation='relu', padding='same')(conv6)
-#  conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(conv6)
-#  conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(conv6)
-#  conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(conv6)
-#
-#  conv7 = Conv2D(1024, (3, 3), activation='relu', padding='same')(conv6)
-#  avgpool = GlobalAveragePooling2D()(conv7)
-#
-#  outputs = Dense(24, activation='sigmoid')(avgpool)
-#
-#  model = Model(inputs=inputs, outputs=outputs)
-#
-#  return model
+def getCreated3DModel():
+  inputs = Input((512,512,3))   #evtl anpassen
 
-model = getCreated2DModel()
+  conv1 = Conv2D(32, (3, 3), activation='relu', padding='same')(inputs)
+  pool1 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv1)
 
+  conv2 = Conv2D(64, (3, 3), activation='relu', padding='same')(pool1)
+  pool2 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv2)
+
+  conv3 = Conv2D(128, (3, 3), activation='relu', padding='same')(pool2)
+  conv3 = Conv2D(64, (1, 1), activation='relu', padding='same')(conv3)
+  conv3 = Conv2D(128, (3, 3), activation='relu', padding='same')(conv3)
+  pool3 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv3)
+
+  conv4 = Conv2D(256, (3, 3), activation='relu', padding='same')(pool3)
+  conv4 = Conv2D(128, (1, 1), activation='relu', padding='same')(conv4)
+  conv4 = Conv2D(256, (3, 3), activation='relu', padding='same')(conv4)
+  pool4 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv4)
+  
+#  drop4 = Dropout(0.2)(pool4)
+
+  conv5 = Conv2D(512, (3, 3), activation='relu', padding='same')(pool4)
+  conv5 = Conv2D(256, (1, 1), activation='relu', padding='same')(conv5)
+  conv5 = Conv2D(512, (3, 3), activation='relu', padding='same')(conv5)
+  conv5 = Conv2D(256, (1, 1), activation='relu', padding='same')(conv5)
+  conv5 = Conv2D(512, (3, 3), activation='relu', padding='same')(conv5)
+  pool5 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv5)
+
+#  drop5 = Dropout(0.2)(pool5)
+
+  conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(pool5)
+  conv6 = Conv2D(512, (1, 1), activation='relu', padding='same')(conv6)
+  conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(conv6)
+  conv6 = Conv2D(512, (1, 1), activation='relu', padding='same')(conv6)
+  conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(conv6)
+  conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(conv6)
+  conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(conv6)
+
+  conv7 = Conv2D(1024, (3, 3), activation='relu', padding='same')(conv6)
+  avgpool = GlobalAveragePooling2D()(conv7)
+
+  outputs = Dense(16, activation='linear')(avgpool)
+
+  model = Model(inputs=inputs, outputs=outputs)
+
+  return model
+
+model2D = getCreated2DModel()
+model3D = getCreated3DModel()
 print("vor compile")
 # falsche loss funktion
 #adam = Adam(learning_rate=0.0001, beta_1=0.9, beta_2=0.999, amsgrad=False)
-model.compile(optimizer="adam", loss='mean_squared_error', metrics=['mean_absolute_error'])
+model2D.compile(optimizer="adam", loss='mean_squared_error', metrics=['mean_absolute_error'])
+model3D.compile(optimizer="adam", loss='mean_squared_error', metrics=['mean_absolute_error'])
 print("nach compile")
 
 print("vor fit")
@@ -217,9 +219,12 @@ callbacks = [ModelCheckpoint(filepath, monitor='val_loss', verbose=0, save_best_
              ]
 #generator = Generator(x_pathsTrainData, y_2D_labelTrainData, 16)
 #generatorValidation = Generator(x_pathsValData, y_2D_labelValData, 16, validation=True)
-#
-#histGenerator = model.fit_generator(generator, validation_data=generatorValidation, steps_per_epoch=1000, epochs=10)
-hist = model.fit(x_imgTrainData, y_2D_labelTrainData, validation_data = (x_imgValData, y_2D_labelValData), batch_size=16, epochs=50, callbacks=callbacks)
+
+# 2D Model
+#hist = model2D.fit(x_imgTrainData, y_2D_labelTrainData, validation_data = (x_imgValData, y_2D_labelValData), batch_size=16, epochs=10, callbacks=callbacks)
+# 3D Model
+hist = model3D.fit(x_imgTrainData, y_3D_labelTrainData, validation_data = (x_imgValData, y_3D_labelValData), batch_size=16, epochs=50, callbacks=callbacks)
+
 
 #
 print("nach fit")
@@ -282,43 +287,21 @@ for cnt,key in enumerate(hist.history.keys()):
 
 # here print 3d Box predicted images
     
-#for i in range(10):
-#        
-#    #-------------------
-#    predImg = np.zeros(shape=(1,512,512,3))
-#    img = cv2.resize(cv2.imread("./synthetic/000"+str(800+i)+".is.png"),(512,512))
-#    predImg[0] = cv2.resize(img,(512,512))
-#    
-#    parser = Parser("./synthetic/000"+str(800+i)+".json")
-#    #-------------------
-#    predictedData = model.predict(predImg)
-#    predictedData[predictedData < 0] = 0
-#    
-#    imgLabel = parser.get_3D_data()
-#    
-#    print("myData: ", imgLabel)
-#    print("myPredictedData: ", predictedData, " ", len(predictedData))
-#    
-#    
-#    import matplotlib.patches as patches
-#    
-#    fig,ax = plt.subplots(1)
-#    
-#    ax.imshow(img)
-#    
-#    xValue = predictedData.item(1)*512
-#    yValue = predictedData.item(0)*512
-#    width = predictedData.item(3)*512 - xValue
-#    height = predictedData.item(2)*512 - yValue
-#    
-#    xValueLabel = imgLabel[1]*512
-#    yValueLabel = imgLabel[0]*512
-#    widthLabel = imgLabel[3]*512 - xValueLabel
-#    heightLabel = imgLabel[2]*512 - yValueLabel
-#    
-#    rectLabel = patches.Rectangle((xValueLabel,yValueLabel),widthLabel,heightLabel,linewidth=1,edgecolor='b',facecolor='none')
-#    ax.add_patch(rectLabel)
-#    
-#    rectPred = patches.Rectangle((xValue,yValue),width,height,linewidth=1,edgecolor='r',facecolor='none')
-#    ax.add_patch(rectPred)
-#    plt.show()
+for i in range(2):
+        
+    #-------------------
+    predImg = np.zeros(shape=(1,512,512,3))
+    img = cv2.resize(cv2.imread("./synthetic/000"+str(800+i)+".is.png"),(512,512))
+    predImg[0] = cv2.resize(img,(512,512))
+    
+    parser = Parser("./synthetic/000"+str(800+i)+".json")
+    #-------------------
+    predictedData = model3D.predict(predImg)
+    predictedData[predictedData < 0] = 0
+    
+    img3DLabel = parser.get_3D_data()
+    
+    print("myData: ", img3DLabel)
+    print("myPredictedData: ", predictedData, " ", len(predictedData))
+    print("----------------------------")
+    

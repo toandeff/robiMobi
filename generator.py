@@ -91,7 +91,7 @@ class Generator():
             Y = KeypointsOnImage([Keypoint(x=self.train_labels[idx][0]*512, y=self.train_labels[idx][1]*512),
                                      Keypoint(x=self.train_labels[idx][2]*512, y=self.train_labels[idx][3]*512),], shape=X.shape)
 
-            seq = iaa.Sequential([
+            seq2D = iaa.Sequential([
                 # Small gaussian blur with random sigma between 0 and 0.5.
                 # But we only blur about 50% of all images.
                 iaa.Sometimes(0.5,
@@ -117,10 +117,13 @@ class Generator():
                 )
             ], random_order=True) # apply augmenters in random order
 
-            seq.deterministic = True
-       
-            aug_img, aug_label = seq(image=X,  keypoints=Y)
+            seq2D.deterministic = True
             
+#            seq3D = iaa.Sequential([])
+            
+
+            aug_img, aug_label = seq2D(image=X,  keypoints=Y)
+
             aug_label = [(aug_label.keypoints[0].x/512), (aug_label.keypoints[0].y/512), 
                          (aug_label.keypoints[1].x/512), (aug_label.keypoints[1].y/512)]
      
