@@ -18,13 +18,12 @@ import matplotlib.pyplot as plt
 from os import listdir
 import os.path
 import cv2
-
+from datetime import datetime
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 from jsonParser import Parser
 from generator import Generator
 #from root_path + "generator.ipynb" import Generator
-
 # how to extract data
 #import zipfile
 #zip_ref = zipfile.ZipFile(root_path + "/synthetic.zip", 'r')
@@ -55,8 +54,8 @@ if len(x_paths) * 0.7 < 1:
 x_pathsTrainData = x_paths[0:splitTrainValData]
 x_pathsValData = x_paths[splitTrainValData:]
 print(len(x_pathsTrainData), " " ,len(x_pathsValData))
-x_imgTrainData = np.zeros(shape=(len(x_pathsTrainData),512,512,3))
-x_imgValData = np.zeros(shape=(len(x_pathsValData),512,512,3))
+x_imgTrainData = np.zeros(shape=(len(x_pathsTrainData),512,512,3), dtype=np.uint8)
+x_imgValData = np.zeros(shape=(len(x_pathsValData),512,512,3), dtype=np.uint8)
 
 
 for idx in range(0, len(x_pathsTrainData)):
@@ -217,13 +216,13 @@ print("vor fit")
 #keras.callbacks.callbacks.ModelCheckpoint(filepath, monitor='val_loss', verbose=0, save_best_only=False, save_weights_only=False, mode='auto', period=1)
 #keras.callbacks.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, patience=0, verbose=0, mode='auto', baseline=None, restore_best_weights=False)
 #keras.callbacks.tensorboard_v1.TensorBoard(log_dir='./logs', histogram_freq=0, batch_size=32, write_graph=True, write_grads=False, write_images=False, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None, embeddings_data=None, update_freq='epoch')
-filepath="./"
-#callbacks = [ModelCheckpoint(filepath, monitor='val_loss', verbose=0, save_best_only=False, save_weights_only=False, mode='auto', period=5)]
+filepath = "./model_"+(datetime.now().strftime("%Y_%m_%d_%H_%M_%S")).replace(" ","_")+".h5"
+callbacks = [ModelCheckpoint(filepath, monitor='val_loss', verbose=0, save_best_only=True, save_weights_only=False, mode='auto', period=2)]
 #generator = Generator(x_pathsTrainData, y_2D_labelTrainData, 16)
 #generatorValidation = Generator(x_pathsValData, y_2D_labelValData, 16, validation=True)
 #
 #histGenerator = model.fit_generator(generator, validation_data=generatorValidation, steps_per_epoch=1000, epochs=10)
-hist = model.fit(x_imgTrainData, y_2D_labelTrainData, validation_data = (x_imgValData, y_2D_labelValData), batch_size=32, epochs=160)
+hist = model.fit(x_imgTrainData, y_2D_labelTrainData, validation_data = (x_imgValData, y_2D_labelValData), batch_size=32, epochs=20, callbacks=callbacks)
 
 #
 print("nach fit")

@@ -81,6 +81,7 @@ class Generator():
         self.aug_test_labels = []        
         
     def augment_train_data(self):
+        sometimes = lambda aug: iaa.Sometimes(0.5, aug)
         for idx in range (len(self.train_imgs)):
             
             aug_img = np.zeros(shape=(512,512,3)) 
@@ -89,8 +90,85 @@ class Generator():
             X = self.train_imgs[idx]
             Y = KeypointsOnImage([Keypoint(x=self.train_labels[idx][0]*512, y=self.train_labels[idx][1]*512),
                                      Keypoint(x=self.train_labels[idx][2]*512, y=self.train_labels[idx][3]*512),], shape=X.shape)
-    
-            seq = iaa.Sequential([iaa.Affine(scale=(0.5, 0.7))])
+
+            seq = iaa.Sequential(
+                [
+            
+                    # crop some of the images by 0-10% of their height/width
+    #                sometimes(iaa.Crop(percent=(0, 0.1))),
+                            #
+                    # Execute 0 to 5 of the following (less important) augmenters per
+                    # image. Don't execute all of them, as that would often be way too
+                    # strong.
+                    #
+                    iaa.SomeOf((0, 5),
+                        [
+    #                        # Convert some images into their superpixel representation,
+    #                        # sample between 20 and 200 superpixels per image, but do
+    #                        # not replace all superpixels with their average, only
+    #                        # some of them (p_replace).
+    #                        sometimes(
+    #                            iaa.Superpixels(
+    #                                p_replace=(0, 1.0),
+    #                                n_segments=(20, 200)
+    #                            )
+    #                        ),
+            
+                            # Blur each image with varying strength using
+                            # gaussian blur (sigma between 0 and 3.0),
+                            # average/uniform blur (kernel size between 2x2 and 7x7)
+                            # median blur (kernel size between 3x3 and 11x11).
+                            iaa.OneOf([
+                                iaa.GaussianBlur((0, 3.0)),
+                                iaa.AverageBlur(k=(2, 7)),
+#                                iaa.MedianBlur(k=(3, 11)),
+                            ]),
+            
+                            # Sharpen each image, overlay the result with the original
+                            # image using an alpha between 0 (no sharpening) and 1
+                            # (full sharpening effect).
+                            iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.5)),
+            
+                            # Same as sharpen, but for an embossing effect.
+                            iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)),
+            
+                            # Search in some images either for all edges or for
+                            # directed edges. These edges are then marked in a black
+                            # and white image and overlayed with the original image
+                            # using an alpha of 0 to 0.7.
+    #                        sometimes(iaa.OneOf([
+    #                            iaa.EdgeDetect(alpha=(0, 0.7)),
+    #                            iaa.DirectedEdgeDetect(
+    #                                alpha=(0, 0.7), direction=(0.0, 1.0)
+    #                            ),
+    #                        ])),
+            
+            
+            
+                            # Improve or worsen the contrast of images.
+                            iaa.ContrastNormalization((0.5, 2.0), per_channel=0.5),
+            
+                            # Convert each image to grayscale and then overlay the
+                            # result with the original with random alpha. I.e. remove
+                            # colors with varying strengths.
+                            iaa.Grayscale(alpha=(0.0, 1.0)),
+            
+                            # In some images move pixels locally around (with random
+                            # strengths).
+                            sometimes(
+                                iaa.ElasticTransformation(alpha=(0.5, 3.5), sigma=0.25)
+                            ),
+            
+                            # In some images distort local areas with varying strength.
+                            sometimes(iaa.PiecewiseAffine(scale=(0.01, 0.05)))
+                        ],
+                        # do all of the above augmentations in random order
+                        random_order=True
+                    )
+                ],
+                # do all of the above augmentations in random order
+                random_order=True
+            )
             seq.deterministic = True
        
             aug_img, aug_label = seq(image=X,  keypoints=Y)
@@ -102,6 +180,7 @@ class Generator():
             self.aug_train_labels.append(aug_label)
         
     def augment_test_data(self):
+        sometimes = lambda aug: iaa.Sometimes(0.5, aug)
         for idx in range (len(self.test_imgs)):
             
             aug_img = np.zeros(shape=(512,512,3)) 
@@ -110,8 +189,83 @@ class Generator():
             X = self.test_imgs[idx]
             Y = KeypointsOnImage([Keypoint(x=self.test_labels[idx][0]*512, y=self.test_labels[idx][1]*512),
                                       Keypoint(x=self.test_labels[idx][2]*512, y=self.test_labels[idx][3]*512)], shape=X.shape)
-    
-            seq = iaa.Sequential([iaa.Affine(scale=(0.5, 0.7))])
+
+            seq = iaa.Sequential(
+                [
+            
+                    # crop some of the images by 0-10% of their height/width
+    #                sometimes(iaa.Crop(percent=(0, 0.1))),
+                            #
+                    # Execute 0 to 5 of the following (less important) augmenters per
+                    # image. Don't execute all of them, as that would often be way too
+                    # strong.
+                    #
+                    iaa.SomeOf((0, 5),
+                        [
+    #                        # Convert some images into their superpixel representation,
+    #                        # sample between 20 and 200 superpixels per image, but do
+    #                        # not replace all superpixels with their average, only
+    #                        # some of them (p_replace).
+    #                        sometimes(
+    #                            iaa.Superpixels(
+    #                                p_replace=(0, 1.0),
+    #                                n_segments=(20, 200)
+    #                            )
+    #                        ),
+            
+                            # Blur each image with varying strength using
+                            # gaussian blur (sigma between 0 and 3.0),
+                            # average/uniform blur (kernel size between 2x2 and 7x7)
+                            # median blur (kernel size between 3x3 and 11x11).
+                            iaa.OneOf([
+                                iaa.GaussianBlur((0, 3.0)),
+                                iaa.AverageBlur(k=(2, 7)),
+#                                iaa.MedianBlur(k=(3, 11)),
+                            ]),
+            
+                            # Sharpen each image, overlay the result with the original
+                            # image using an alpha between 0 (no sharpening) and 1
+                            # (full sharpening effect).
+                            iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.5)),
+            
+                            # Same as sharpen, but for an embossing effect.
+                            iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)),
+            
+                            # Search in some images either for all edges or for
+                            # directed edges. These edges are then marked in a black
+                            # and white image and overlayed with the original image
+                            # using an alpha of 0 to 0.7.
+                            sometimes(iaa.OneOf([
+                                iaa.EdgeDetect(alpha=(0, 0.7)),
+                                iaa.DirectedEdgeDetect(
+                                    alpha=(0, 0.7), direction=(0.0, 1.0)
+                                ),
+                            ])),        
+            
+                            # Improve or worsen the contrast of images.
+                            iaa.ContrastNormalization((0.5, 2.0), per_channel=0.5),
+            
+                            # Convert each image to grayscale and then overlay the
+                            # result with the original with random alpha. I.e. remove
+                            # colors with varying strengths.
+                            iaa.Grayscale(alpha=(0.0, 1.0)),
+            
+                            # In some images move pixels locally around (with random
+                            # strengths).
+                            sometimes(
+                                iaa.ElasticTransformation(alpha=(0.5, 3.5), sigma=0.25)
+                            ),
+            
+                            # In some images distort local areas with varying strength.
+                            sometimes(iaa.PiecewiseAffine(scale=(0.01, 0.05)))
+                        ],
+                        # do all of the above augmentations in random order
+                        random_order=True
+                    )
+                ],
+                # do all of the above augmentations in random order
+                random_order=True
+            )              
             seq.deterministic = True
             
             aug_img, aug_label = seq(image=X,  keypoints=Y)
