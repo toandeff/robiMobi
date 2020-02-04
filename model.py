@@ -38,20 +38,12 @@ for dataIdx in range (len(data)):
         
     elif os.path.splitext(data[dataIdx])[1][1:] == "json":
         y_paths.append(directory_path + data[dataIdx])
-
         
 x_paths = np.array(x_paths)
 y_paths = np.array(y_paths)
 
+x_pathsTrainData, x_pathsValData, y_2D_labelTrainDataPath, y_2D_labelValDataPath = train_test_split(x_paths, y_paths, test_size=0.3)
 
-splitTrainValData = int(len(x_paths) * 0.7) # splits the data to get 70 % Training Data and 30 % Validation Data
-
-if len(x_paths) * 0.7 < 1:
-    splitTrainValData = 1
-
-x_pathsTrainData = x_paths[0:splitTrainValData]
-x_pathsValData = x_paths[splitTrainValData:]
-print(len(x_pathsTrainData), " " ,len(x_pathsValData))
 x_imgTrainData = np.zeros(shape=(len(x_pathsTrainData),512,512,3), dtype=np.uint8)
 x_imgValData = np.zeros(shape=(len(x_pathsValData),512,512,3), dtype=np.uint8)
 
@@ -71,29 +63,33 @@ x_imgTrainData = np.array(x_imgTrainData)
 x_imgValData = np.array(x_imgValData)
 
 
-y_2D_labelBox = []
-y_3D_labelBox = []
+y_2D_labelTrainData = []
+y_3D_labelTrainData = []
+
+y_2D_labelValData = []
+y_3D_labelValData = []
+
 y_centerPoint_Label = []
 
-
-    
-for y_path in y_paths:
-    #print(y_path)
+for y_path in y_2D_labelTrainDataPath:
     parser = Parser(y_path)
-    y_2D_labelBox.append(parser.get_2D_data())
-    y_3D_labelBox.append(parser.get_3D_data())
+    y_2D_labelTrainData.append(parser.get_2D_data())
+    y_3D_labelTrainData.append(parser.get_3D_data())
     y_centerPoint_Label.append(parser.get_centerPoint())
     
-# split data into training data and test data
+for y_path in y_2D_labelValDataPath:
+    parser = Parser(y_path)
+    y_2D_labelValData.append(parser.get_2D_data())
+    y_3D_labelValData.append(parser.get_3D_data())
+    y_centerPoint_Label.append(parser.get_centerPoint())
 
-y_2D_labelBox = np.array(y_2D_labelBox)
-y_3D_labelBox = np.array(y_3D_labelBox)
 
-y_2D_labelTrainData =  y_2D_labelBox[0:splitTrainValData]
-y_2D_labelValData = y_2D_labelBox[splitTrainValData:]
+y_2D_labelTrainData = np.array(y_2D_labelTrainData)
+y_2D_labelValData = np.array(y_2D_labelValData)
 
-y_3D_labelTrainData = y_3D_labelBox[0:splitTrainValData]
-y_3D_labelValData =  y_3D_labelBox[splitTrainValData:]
+y_3D_labelTrainData = np.array(y_3D_labelTrainData)
+y_3D_labelValData = np.array(y_3D_labelValData)
+
 
 def proceed_2D_training (useGen, callbacks):
     global x_imgTrainData, y_2D_labelTrainData, x_imgValData, y_2D_labelValData
@@ -112,7 +108,7 @@ def proceed_2D_training (useGen, callbacks):
     print("starting the 2D training")
     hist = model2D.fit(x_imgTrainData, y_2D_labelTrainData,
                        validation_data = (x_imgValData, y_2D_labelValData), 
-                       batch_size=16, epochs=100, 
+                       batch_size=32, epochs=100, 
                        callbacks=callbacks)
   
     return [model2D, hist]
@@ -210,65 +206,43 @@ def load_preTrained_model(modelPath):
     model.load_weights(modelPath)
     return model
     
-#def getCreated2DModel():
-#  inputs = Input((512,512,3))   #evtl anpassen
-#  
-#  conv1 = Conv2D(32, (3, 3), activation='relu', padding='same')(inputs)
-#  pool1 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv1)
-#  
-#  conv2 = Conv2D(64, (3, 3), activation='relu', padding='same')(pool1)
-#  pool2 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv2)
-#  
-#  conv3 = Conv2D(128, (3, 3), activation='relu', padding='same')(pool2)
-#  conv3 = Conv2D(64, (1, 1), activation='relu', padding='same')(conv3)
-#  conv3 = Conv2D(128, (3, 3), activation='relu', padding='same')(conv3)
-#  pool3 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv3)
-#
-#  conv4 = Conv2D(256, (3, 3), activation='relu', padding='same')(pool3)
-#  conv4 = Conv2D(128, (1, 1), activation='relu', padding='same')(conv4)
-#  conv4 = Conv2D(256, (3, 3), activation='relu', padding='same')(conv4)
-#  pool4 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv4)
-#
-##  drop4 = Dropout(0.2)(pool4)
-#  
-#  conv5 = Conv2D(512, (3, 3), activation='relu', padding='same')(pool4)
-#  conv5 = Conv2D(256, (1, 1), activation='relu', padding='same')(conv5)
-#  conv5 = Conv2D(512, (3, 3), activation='relu', padding='same')(conv5)
-#  conv5 = Conv2D(256, (1, 1), activation='relu', padding='same')(conv5)
-#  conv5 = Conv2D(512, (3, 3), activation='relu', padding='same')(conv5)
-#  pool5 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv5)
-#
-##  drop5 = Dropout(0.2)(pool5)
-#
-#  conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(pool5)
-#  conv6 = Conv2D(512, (1, 1), activation='relu', padding='same')(conv6)
-#  conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(conv6)
-#  conv6 = Conv2D(512, (1, 1), activation='relu', padding='same')(conv6)
-#  conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(conv6)
-#
-#  conv7 = Conv2D(1024, (1, 1), activation='relu', padding='same')(conv6)
-#  avgpool = GlobalAveragePooling2D()(conv7)
-#
-#  outputs = Dense(4, activation='linear')(avgpool)
-#
-#  model = Model(inputs=inputs, outputs=outputs)
-#
-#  return model
-
 def getCreated2DModel():
   inputs = Input((512,512,3))   #evtl anpassen
-
-  conv1 = Conv2D(16, (3, 3), activation='relu', padding='same')(inputs)
+  
+  conv1 = Conv2D(32, (3, 3), activation='relu', padding='same')(inputs)
   pool1 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv1)
-
-  conv2 = Conv2D(32, (3, 3), activation='relu', padding='same')(pool1)
+  
+  conv2 = Conv2D(64, (3, 3), activation='relu', padding='same')(pool1)
   pool2 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv2)
-
-  conv3 = Conv2D(32, (3, 3), activation='relu', padding='same')(pool2)
-  conv3 = Conv2D(64, (3, 3), activation='relu', padding='same')(conv3)
+  
+  conv3 = Conv2D(128, (3, 3), activation='relu', padding='same')(pool2)
+  conv3 = Conv2D(64, (1, 1), activation='relu', padding='same')(conv3)
+  conv3 = Conv2D(128, (3, 3), activation='relu', padding='same')(conv3)
   pool3 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv3)
 
-  conv7 = Conv2D(64, (1, 1), activation='relu', padding='same')(pool3)
+  conv4 = Conv2D(256, (3, 3), activation='relu', padding='same')(pool3)
+  conv4 = Conv2D(128, (1, 1), activation='relu', padding='same')(conv4)
+  conv4 = Conv2D(256, (3, 3), activation='relu', padding='same')(conv4)
+  pool4 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv4)
+
+#  drop4 = Dropout(0.2)(pool4)
+  
+  conv5 = Conv2D(512, (3, 3), activation='relu', padding='same')(pool4)
+  conv5 = Conv2D(256, (1, 1), activation='relu', padding='same')(conv5)
+  conv5 = Conv2D(512, (3, 3), activation='relu', padding='same')(conv5)
+  conv5 = Conv2D(256, (1, 1), activation='relu', padding='same')(conv5)
+  conv5 = Conv2D(512, (3, 3), activation='relu', padding='same')(conv5)
+  pool5 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv5)
+
+#  drop5 = Dropout(0.2)(pool5)
+
+  conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(pool5)
+  conv6 = Conv2D(512, (1, 1), activation='relu', padding='same')(conv6)
+  conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(conv6)
+  conv6 = Conv2D(512, (1, 1), activation='relu', padding='same')(conv6)
+  conv6 = Conv2D(1024, (3, 3), activation='relu', padding='same')(conv6)
+
+  conv7 = Conv2D(1000, (1, 1), activation='relu', padding='same')(conv6)
   avgpool = GlobalAveragePooling2D()(conv7)
 
   outputs = Dense(4, activation='linear')(avgpool)
@@ -276,6 +250,28 @@ def getCreated2DModel():
   model = Model(inputs=inputs, outputs=outputs)
 
   return model
+
+#def getCreated2DModel():
+#  inputs = Input((512,512,3))   #evtl anpassen
+#
+#  conv1 = Conv2D(16, (3, 3), activation='relu', padding='same')(inputs)
+#  pool1 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv1)
+#
+#  conv2 = Conv2D(32, (3, 3), activation='relu', padding='same')(pool1)
+#  pool2 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv2)
+#
+#  conv3 = Conv2D(32, (3, 3), activation='relu', padding='same')(pool2)
+#  conv3 = Conv2D(64, (3, 3), activation='relu', padding='same')(conv3)
+#  pool3 = MaxPooling2D(pool_size=(2, 2), strides=2)(conv3)
+#
+#  conv7 = Conv2D(64, (1, 1), activation='relu', padding='same')(pool3)
+#  avgpool = GlobalAveragePooling2D()(conv7)
+#
+#  outputs = Dense(4, activation='linear')(avgpool)
+#
+#  model = Model(inputs=inputs, outputs=outputs)
+#
+#  return model
 
 def getCreated3DModel():
   inputs = Input((512,512,3))   #evtl anpassen
@@ -332,9 +328,9 @@ def getCreated3DModel():
 dateTime = (datetime.now().strftime("%Y_%m_%d_%H_%M_%S")).replace(" ","_")
 filepath = "./model_" + dateTime#+"_epoch({epoch:02d})-val_loss({val_loss:.4f})-loss({loss:.4f}).hdf5"
 callbacks = [ModelCheckpoint(filepath, monitor='val_loss', verbose=1, save_best_only=True, save_weights_only=True, mode='min', period=1)
-             #,EarlyStopping(monitor='val_loss', min_delta=10, patience=10, verbose=0, mode='min', baseline=None, restore_best_weights=False) # stops after 5 epochs if the val_loss doesnt decrease
-            #  ,TensorBoard(log_dir='.\\', histogram_freq=1, batch_size=16,profile_batch = 100000000, write_graph=True, write_grads=True, write_images=True, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None, embeddings_data=None, update_freq='epoch')
-#             ,ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=3, verbose=1, mode='min', min_delta=0.0001, cooldown=0, min_lr=0)
+             ,EarlyStopping(monitor='val_loss', min_delta=10, patience=10, verbose=0, mode='min', baseline=None, restore_best_weights=False) # stops after 5 epochs if the val_loss doesnt decrease
+              ,TensorBoard(log_dir='.\\', histogram_freq=1, batch_size=16,profile_batch = 100000000, write_graph=True, write_grads=True, write_images=True, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None, embeddings_data=None, update_freq='epoch')
+             ,ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=3, verbose=1, mode='min', min_delta=0.0001, cooldown=0, min_lr=0)
              ]
  
 
