@@ -77,95 +77,99 @@ class Generator():
         
     def augment_2D_train_data(self):
         sometimes = lambda aug: iaa.Sometimes(0.5, aug)
-        for idx in range (len(self.train_imgs)):
-            
-            aug_img = np.zeros(shape=(512,512,3)) 
-            aug_label = np.zeros(shape=(1))
-        
-            X = self.train_imgs[idx]
-            Y = KeypointsOnImage([Keypoint(x=self.train_labels[idx][0]*512, y=self.train_labels[idx][1]*512),
-                                     Keypoint(x=self.train_labels[idx][2]*512, y=self.train_labels[idx][3]*512),], shape=X.shape)
+        for loop in range(2):
+          print("augment train data loop: ", loop)
+          for idx in range (len(self.train_imgs)):
+              
+              aug_img = np.zeros(shape=(512,512,3)) 
+              aug_label = np.zeros(shape=(1))
+          
+              X = self.train_imgs[idx]
+              Y = KeypointsOnImage([Keypoint(x=self.train_labels[idx][0]*512, y=self.train_labels[idx][1]*512),
+                                      Keypoint(x=self.train_labels[idx][2]*512, y=self.train_labels[idx][3]*512),], shape=X.shape)
 
-            seq2D = iaa.Sequential([
-                # Small gaussian blur with random sigma between 0 and 0.5.
-                # But we only blur about 50% of all images.
-                iaa.Sometimes(0.5,
-                    iaa.GaussianBlur(sigma=(0, 0.5))
-                ),
-                # Strengthen or weaken the contrast in each image.
-                iaa.ContrastNormalization((0.75, 1.5)),
-                # Add gaussian noise.
-                # For 50% of all images, we sample the noise once per pixel.
-                # For the other 50% of all images, we sample the noise per pixel AND
-                # channel. This can change the color (not only brightness) of the
-                # pixels.
-                iaa.AdditiveGaussianNoise(loc=0, scale=(0.0, 0.05*255), per_channel=0.5),
-                # Make some images brighter and some darker.
-                # In 20% of all cases, we sample the multiplier once per channel,
-                # which can end up changing the color of the images.
-                iaa.Multiply((0.8, 1.2), per_channel=0.2),
-                # Apply affine transformations to each image.
-                # Scale/zoom them, translate/move them, rotate them and shear them.
-                iaa.Affine(
-                    scale={"x": (0.8, 1.2), "y": (0.8, 1.2)},
-                    translate_percent={"x": (-0.2, 0.2), "y": (-0.2, 0.2)},
-                )
-            ], random_order=True) # apply augmenters in random order
+              seq2D = iaa.Sequential([
+                  # Small gaussian blur with random sigma between 0 and 0.5.
+                  # But we only blur about 50% of all images.
+                  iaa.Sometimes(0.5,
+                      iaa.GaussianBlur(sigma=(0, 0.5))
+                  ),
+                  # Strengthen or weaken the contrast in each image.
+                  iaa.ContrastNormalization((0.75, 1.5)),
+                  # Add gaussian noise.
+                  # For 50% of all images, we sample the noise once per pixel.
+                  # For the other 50% of all images, we sample the noise per pixel AND
+                  # channel. This can change the color (not only brightness) of the
+                  # pixels.
+                  iaa.AdditiveGaussianNoise(loc=0, scale=(0.0, 0.05*255), per_channel=0.5),
+                  # Make some images brighter and some darker.
+                  # In 20% of all cases, we sample the multiplier once per channel,
+                  # which can end up changing the color of the images.
+                  iaa.Multiply((0.8, 1.2), per_channel=0.2),
+                  # Apply affine transformations to each image.
+                  # Scale/zoom them, translate/move them, rotate them and shear them.
+                  # iaa.Affine(
+                  #     scale={"x": (0.8, 1.2), "y": (0.8, 1.2)},
+                  #     translate_percent={"x": (-0.2, 0.2), "y": (-0.2, 0.2)},
+                  # )
+              ], random_order=True) # apply augmenters in random order
 
-            seq2D.deterministic = True            
+              seq2D.deterministic = True            
 
-            aug_img, aug_label = seq2D(image=X,  keypoints=Y)
+              aug_img, aug_label = seq2D(image=X,  keypoints=Y)
 
-            aug_label = [(aug_label.keypoints[0].x/512), (aug_label.keypoints[0].y/512), 
-                         (aug_label.keypoints[1].x/512), (aug_label.keypoints[1].y/512)]
-     
-            self.aug_train_imgs.append(aug_img)
-            self.aug_train_labels.append(aug_label)
+              aug_label = [(aug_label.keypoints[0].x/512), (aug_label.keypoints[0].y/512), 
+                          (aug_label.keypoints[1].x/512), (aug_label.keypoints[1].y/512)]
+      
+              self.aug_train_imgs.append(aug_img)
+              self.aug_train_labels.append(aug_label)
         
     def augment_2D_test_data(self):
         sometimes = lambda aug: iaa.Sometimes(0.5, aug)
-        for idx in range (len(self.test_imgs)):
-            
-            aug_img = np.zeros(shape=(512,512,3)) 
-            aug_label = np.zeros(shape=(1))
-        
-            X = self.test_imgs[idx]
-            Y = KeypointsOnImage([Keypoint(x=self.train_labels[idx][0]*512, y=self.train_labels[idx][1]*512),
-                                     Keypoint(x=self.train_labels[idx][2]*512, y=self.train_labels[idx][3]*512),], shape=X.shape)
-            seq = iaa.Sequential([
-                # Small gaussian blur with random sigma between 0 and 0.5.
-                # But we only blur about 50% of all images.
-                iaa.Sometimes(0.5,
-                    iaa.GaussianBlur(sigma=(0, 0.5))
-                ),
-                # Strengthen or weaken the contrast in each image.
-                iaa.ContrastNormalization((0.75, 1.5)),
-                # Add gaussian noise.
-                # For 50% of all images, we sample the noise once per pixel.
-                # For the other 50% of all images, we sample the noise per pixel AND
-                # channel. This can change the color (not only brightness) of the
-                # pixels.
-                iaa.AdditiveGaussianNoise(loc=0, scale=(0.0, 0.05*255), per_channel=0.5),
-                # Make some images brighter and some darker.
-                # In 20% of all cases, we sample the multiplier once per channel,
-                # which can end up changing the color of the images.
-                iaa.Multiply((0.8, 1.2), per_channel=0.2),
-                # Apply affine transformations to each image.
-                # Scale/zoom them, translate/move them, rotate them and shear them.
-                iaa.Affine(
-                    scale={"x": (0.8, 1.2), "y": (0.8, 1.2)},
-                    translate_percent={"x": (-0.2, 0.2), "y": (-0.2, 0.2)},
+        for loop in range(2):
+          print("augment test data loop: ", loop)
+          for idx in range (len(self.test_imgs)):
+              
+              aug_img = np.zeros(shape=(512,512,3)) 
+              aug_label = np.zeros(shape=(1))
+          
+              X = self.test_imgs[idx]
+              Y = KeypointsOnImage([Keypoint(x=self.train_labels[idx][0]*512, y=self.train_labels[idx][1]*512),
+                                      Keypoint(x=self.train_labels[idx][2]*512, y=self.train_labels[idx][3]*512),], shape=X.shape)
+              seq = iaa.Sequential([
+                  # Small gaussian blur with random sigma between 0 and 0.5.
+                  # But we only blur about 50% of all images.
+                  iaa.Sometimes(0.5,
+                      iaa.GaussianBlur(sigma=(0, 0.5))
+                  ),
+                  # Strengthen or weaken the contrast in each image.
+                  iaa.ContrastNormalization((0.75, 1.5)),
+                  # Add gaussian noise.
+                  # For 50% of all images, we sample the noise once per pixel.
+                  # For the other 50% of all images, we sample the noise per pixel AND
+                  # channel. This can change the color (not only brightness) of the
+                  # pixels.
+                  iaa.AdditiveGaussianNoise(loc=0, scale=(0.0, 0.05*255), per_channel=0.5),
+                  # Make some images brighter and some darker.
+                  # In 20% of all cases, we sample the multiplier once per channel,
+                  # which can end up changing the color of the images.
+                  iaa.Multiply((0.8, 1.2), per_channel=0.2),
+                  # Apply affine transformations to each image.
+                  # Scale/zoom them, translate/move them, rotate them and shear them.
+                  # iaa.Affine(
+                  #     scale={"x": (0.8, 1.2), "y": (0.8, 1.2)},
+                  #     translate_percent={"x": (-0.2, 0.2), "y": (-0.2, 0.2)},
 
-                )
-            ], random_order=True) # apply augmenters in random order
-            
-            aug_img, aug_label = seq(image=X,  keypoints=Y)
-            
-            aug_label = [(aug_label.keypoints[0].x/512), (aug_label.keypoints[0].y/512), 
-                         (aug_label.keypoints[1].x/512), (aug_label.keypoints[1].y/512)]
-            
-            self.aug_test_imgs.append(aug_img)
-            self.aug_test_labels.append(aug_label)
+                  # )
+              ], random_order=True) # apply augmenters in random order
+              
+              aug_img, aug_label = seq(image=X,  keypoints=Y)
+              
+              aug_label = [(aug_label.keypoints[0].x/512), (aug_label.keypoints[0].y/512), 
+                          (aug_label.keypoints[1].x/512), (aug_label.keypoints[1].y/512)]
+              
+              self.aug_test_imgs.append(aug_img)
+              self.aug_test_labels.append(aug_label)
 
     def augment_3D_train_data(self):
         sometimes = lambda aug: iaa.Sometimes(0.5, aug)
